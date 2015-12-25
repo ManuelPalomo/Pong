@@ -32,6 +32,14 @@ public class Ball {
 		return size;
 	}
 
+	public void setPosX(int posX) {
+		this.posX = posX;
+	}
+
+	public void setPosY(int posY) {
+		this.posY = posY;
+	}
+
 	/**
 	 * Since we are using a velocity based system, the velocities marks the
 	 * general direction of the ball
