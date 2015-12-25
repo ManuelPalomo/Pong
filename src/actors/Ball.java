@@ -1,5 +1,7 @@
 package actors;
 
+import utils.Cons;
+
 /**
  * This class represents the ball used in pong
  * 
