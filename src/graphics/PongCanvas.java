@@ -36,6 +36,7 @@ public class PongCanvas extends JPanel implements KeyListener {
 	private boolean player2Up;
 	private boolean player2Down;
 
+	private boolean player1IsAI;
 	private boolean player2IsAI;
 
 	private int scorePlayer1;
@@ -55,14 +56,16 @@ public class PongCanvas extends JPanel implements KeyListener {
 		player1Down = false;
 		player2Up = false;
 		player2Down = false;
+
+		player1IsAI = false;
 		player2IsAI = false;
 
 		scorePlayer1 = 0;
 		scorePlayer2 = 0;
 
 		// Speed
-		ballSpeedX = -2;
-		ballSpeedY = 5;
+		ballSpeedX = Cons.BALL_SPEED_X;
+		ballSpeedY = Cons.BALL_SPEED_Y;
 		// Add keyListener properties
 		setFocusable(true);
 		addKeyListener(this);
@@ -113,8 +116,8 @@ public class PongCanvas extends JPanel implements KeyListener {
 		g.setFont(new Font(Font.DIALOG, Font.BOLD, 40));
 		g.drawString(String.valueOf(scorePlayer1), getHeight() / 2 - 50, getWidth() / 2);
 		g.drawString(String.valueOf(scorePlayer2), getHeight() / 2 + 50, getWidth() / 2);
-
-	}
+		
+		}
 
 	/**
 	 * Each step consists of the following stages 1-Update paddle position
@@ -122,10 +125,13 @@ public class PongCanvas extends JPanel implements KeyListener {
 	 */
 	public void step() {
 		if (player2IsAI) {
-			aiMove();
+			aiMove(Cons.PLAYER2);
+		}
+		if(player1IsAI){
+			aiMove(Cons.PLAYER1);
 		}
 		movePlayers();
-		if (player2IsAI) {
+		if (player2IsAI || player1IsAI) {
 			revertMovementVariablesAi();
 		}
 		moveBall();
@@ -133,15 +139,30 @@ public class PongCanvas extends JPanel implements KeyListener {
 	}
 
 	/**
-	 * Simple AI that controls player2, it tries to chase the Y position of the
-	 * ball using the built-in movement system
+	 * Simple AI that controls the player, it tries to chase the Y position of
+	 * the ball using the built-in movement system
 	 */
-	private void aiMove() {
-		if (player2.getPosY() != ball.getPosY()) {
-			if (player2.getPosY() < ball.getPosY()) {
-				player2Down = true;
+	private void aiMove(int player) {
+		Paddle paddle;
+		if (player == Cons.PLAYER1) {
+			paddle = player1;
+		} else {
+			paddle = player2;
+		}
+		if (paddle.getPosY() != ball.getPosY()) {
+			if (paddle.getPosY() < ball.getPosY()) {
+				if (player == Cons.PLAYER1) {
+					player1Down= true;
+				} else {
+					player2Down = true;
+				}
+
 			} else {
-				player2Up = true;
+				if (player == Cons.PLAYER1) {
+					player1Up = true;
+				} else {
+					player2Up= true;
+				}
 			}
 		}
 
@@ -152,8 +173,11 @@ public class PongCanvas extends JPanel implements KeyListener {
 	 * activated need to be reverted in order to perform the next step
 	 */
 	private void revertMovementVariablesAi() {
-		player2Down=false;
-		player2Up=false;
+		player1Up = false;
+		player1Down = false;
+		player2Up = false;
+		player2Down = false;
+		
 
 	}
 
@@ -194,21 +218,8 @@ public class PongCanvas extends JPanel implements KeyListener {
 			ballSpeedY *= -1;
 		}
 
-		// Check if the ball collides with the left paddle (Player 1) using
-		// rectangle collision and invert the X axis
-		if (nextBallX < player1.getPosX() + player1.getWidth() && nextBallX + ball.getSize() > player1.getPosX()
-				&& nextBallY < player1.getPosY() + player1.getHeight()
-				&& ball.getSize() + nextBallY > player1.getPosY()) {
-			ballSpeedX *= -1;
-		}
-
-		// Check if the ball collides with the right paddle(Player 2)
-
-		if (nextBallX < player2.getPosX() + player2.getWidth() && nextBallX + ball.getSize() > player2.getPosX()
-				&& nextBallY < player2.getPosY() + player2.getHeight()
-				&& ball.getSize() + nextBallY > player2.getPosY()) {
-			ballSpeedX *= -1;
-		}
+		checkPaddleCollision(player1, nextBallX, nextBallY);
+		checkPaddleCollision(player2, nextBallX, nextBallY);
 
 		// Check if the ball has passed any of the paddles and reset the game
 		if (nextBallX > player1.getPosX()) {
@@ -219,6 +230,30 @@ public class PongCanvas extends JPanel implements KeyListener {
 
 		}
 
+	}
+
+	private void checkPaddleCollision(Paddle paddle, int nextBallX, int nextBallY) {
+		if (nextBallX < paddle.getPosX() + paddle.getWidth() && nextBallX + ball.getSize() > paddle.getPosX()
+				&& nextBallY < paddle.getPosY() + paddle.getHeight() && ball.getSize() + nextBallY > paddle.getPosY()) {
+			// Now that has collided, we need to check wheter it's top, bottom
+			// or center side to change the angle
+
+			int paddleMiddlePoint = (paddle.getPosY() + (paddle.getPosY() + paddle.getWidth())) / 2;
+
+			// Top
+			if (ball.getPosY() > paddleMiddlePoint) {
+				ballSpeedY = Cons.BALL_SPEED_Y;
+				ballSpeedX *= -1;
+			} else if (ball.getPosY() < paddleMiddlePoint) {
+				ballSpeedY = Cons.BALL_SPEED_Y * -1;
+				ballSpeedX *= -1;
+			} else {
+				ballSpeedY = 0;
+				ballSpeedX *= -1;
+
+			}
+
+		}
 	}
 
 	// Puts the ball in the center and updates the punctuation
@@ -251,8 +286,10 @@ public class PongCanvas extends JPanel implements KeyListener {
 			player2Up = true;
 		} else if (e.getKeyCode() == KeyEvent.VK_S) {
 			player2Down = true;
-		} else if (e.getKeyCode() == KeyEvent.VK_I) {
-			player2IsAI = true;
+		} else if (e.getKeyCode() == KeyEvent.VK_1) {
+			player1IsAI = !player1IsAI;
+		} else if (e.getKeyCode() == KeyEvent.VK_2) {
+			player2IsAI = !player2IsAI;
 		}
 	}
 
