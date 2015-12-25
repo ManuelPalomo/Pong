@@ -18,7 +18,7 @@ import utils.Cons;
  * This class handles all the on-screen painting,it has the game loop
  * incorporated
  * 
- * @author Odin
+ * @author Manuel Palomo <manuel_palomo@hotmail.es>
  *
  */
 public class PongCanvas extends JPanel implements KeyListener {
@@ -35,6 +35,8 @@ public class PongCanvas extends JPanel implements KeyListener {
 	private boolean player1Down;
 	private boolean player2Up;
 	private boolean player2Down;
+
+	private boolean player2IsAI;
 
 	private int scorePlayer1;
 	private int scorePlayer2;
@@ -53,13 +55,14 @@ public class PongCanvas extends JPanel implements KeyListener {
 		player1Down = false;
 		player2Up = false;
 		player2Down = false;
+		player2IsAI = false;
 
 		scorePlayer1 = 0;
 		scorePlayer2 = 0;
 
 		// Speed
-		ballSpeedX = -1;
-		ballSpeedY = 3;
+		ballSpeedX = -2;
+		ballSpeedY = 5;
 		// Add keyListener properties
 		setFocusable(true);
 		addKeyListener(this);
@@ -118,9 +121,40 @@ public class PongCanvas extends JPanel implements KeyListener {
 	 * 2-Check ball collision 3-Update ball position 4-Repaint
 	 */
 	public void step() {
+		if (player2IsAI) {
+			aiMove();
+		}
 		movePlayers();
+		if (player2IsAI) {
+			revertMovementVariablesAi();
+		}
 		moveBall();
 		repaint();
+	}
+
+	/**
+	 * Simple AI that controls player2, it tries to chase the Y position of the
+	 * ball using the built-in movement system
+	 */
+	private void aiMove() {
+		if (player2.getPosY() != ball.getPosY()) {
+			if (player2.getPosY() < ball.getPosY()) {
+				player2Down = true;
+			} else {
+				player2Up = true;
+			}
+		}
+
+	}
+
+	/**
+	 * As the AI don't have the keyReleased, the booleans that might been
+	 * activated need to be reverted in order to perform the next step
+	 */
+	private void revertMovementVariablesAi() {
+		player2Down=false;
+		player2Up=false;
+
 	}
 
 	/**
@@ -177,10 +211,10 @@ public class PongCanvas extends JPanel implements KeyListener {
 		}
 
 		// Check if the ball has passed any of the paddles and reset the game
-		if (nextBallX > player1.getPosX() + 5) {
+		if (nextBallX > player1.getPosX()) {
 			goal(Cons.PLAYER1);
 
-		} else if (nextBallX < player2.getPosX() - 5) {
+		} else if (nextBallX < player2.getPosX()) {
 			goal(Cons.PLAYER2);
 
 		}
@@ -217,6 +251,8 @@ public class PongCanvas extends JPanel implements KeyListener {
 			player2Up = true;
 		} else if (e.getKeyCode() == KeyEvent.VK_S) {
 			player2Down = true;
+		} else if (e.getKeyCode() == KeyEvent.VK_I) {
+			player2IsAI = true;
 		}
 	}
 

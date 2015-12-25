@@ -5,8 +5,7 @@ import utils.Cons;
 /**
  * This class represents the ball used in pong
  * 
- * @author Odin
- *
+ * @author Manuel Palomo <manuel_palomo@hotmail.es>
  */
 public class Ball {
 	private int posX;
